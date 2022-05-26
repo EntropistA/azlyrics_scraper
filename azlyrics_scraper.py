@@ -35,7 +35,3 @@ def artists_names_by_letter(letter: str) -> list:
 def artists_links_by_letter(letter: str) -> list:
     return [artist_and_link.link for artist_and_link in artists_by_letter(letter)]
 
-
-print(artists_by_letter("a"))
-print(artists_names_by_letter("a"))
-print(artists_links_by_letter("a"))
