@@ -4,7 +4,6 @@ from collections import namedtuple
 from bs4 import BeautifulSoup
 import requests
 
-
 BASE_URL = "https://www.azlyrics.com"
 SEARCH_URL = "https://search.azlyrics.com"
 
@@ -144,14 +143,14 @@ def search(term: str) -> Search:
     )
 
 
-def find_song_by_lyrics(lyrics_fragment) -> Song:
-    results = search(lyrics_fragment).lyrics_results
+def find_song_by_title(song_title) -> Song:
+    results = search(song_title).songs_results
     if results:
         return results[0]
 
 
-def find_song_by_title(song_title) -> Song:
-    results = search(song_title).songs_results
+def find_artist_by_name(artist_name) -> Song:
+    results = search(artist_name).artist_results
     if results:
         return results[0]
 
@@ -161,3 +160,18 @@ def find_album_by_title(album_title) -> Song:
     if results:
         return results[0]
 
+
+def find_song_by_lyrics(lyrics_fragment) -> Song:
+    results = search(lyrics_fragment).lyrics_results
+    if results:
+        return results[0]
+
+
+if __name__ == "__main__":
+    while True:
+        phrase = input("Type phrase to test: ")
+
+        print(find_song_by_title(phrase))
+        print(find_artist_by_name(phrase))
+        print(find_album_by_title(phrase))
+        print(find_song_by_lyrics(phrase))
