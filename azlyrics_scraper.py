@@ -17,12 +17,12 @@ def get_soup(url: str) -> BeautifulSoup:
 
 
 Artist = namedtuple("Artist", "name link")
-Album = namedtuple("Album", "name songs_links")
-Song = namedtuple("Song", "name link")
+Album = namedtuple("Album", "title songs_links")
+Song = namedtuple("Song", "title link")
 Search = namedtuple("Search", "songs_results artist_results albums_results lyrics_results")
 
 
-def artists_by_letter(letter: str) -> list:
+def artists_by_letter(letter: str) -> list[Artist]:
     url = f"{BASE_URL}/{letter.lower()}.html"
     soup = get_soup(url)
     names_and_links = []
@@ -35,19 +35,19 @@ def artists_by_letter(letter: str) -> list:
     return names_and_links
 
 
-def artists_names_by_letter(letter: str) -> list:
+def artists_names_by_letter(letter: str) -> list[str]:
     return [artist.name for artist in artists_by_letter(letter)]
 
 
-def artists_links_by_letter(letter: str) -> list:
+def artists_links_by_letter(letter: str) -> list[str]:
     return [artist.link for artist in artists_by_letter(letter)]
 
 
-def albums_and_songs(artist_link: str) -> list:
+def albums_and_songs_by_artist(artist_link: str) -> list[Album]:
     soup = get_soup(artist_link)
 
     albums = []
-    current_album_name = ""
+    current_album_title = ""
     current_songs = []
 
     albums_div = soup.find("div", id="listAlbum")
@@ -59,12 +59,12 @@ def albums_and_songs(artist_link: str) -> list:
             continue
 
         if "album" in class_:
-            if current_album_name:
+            if current_album_title:
                 albums.append(
-                    Album(current_album_name, current_songs)
+                    Album(current_album_title, current_songs)
                 )
                 current_songs = []
-            current_album_name = div.find("b").text.strip('"')
+            current_album_title = div.find("b").text.strip('"')
 
         elif "listalbum-item" in class_:
             a = div.find("a")
@@ -76,13 +76,9 @@ def albums_and_songs(artist_link: str) -> list:
             )
 
     albums.append(
-        Album(current_album_name, current_songs)
+        Album(current_album_title, current_songs)
     )
     return albums
-
-
-print(albums_and_songs("https://www.azlyrics.com/e/emilyking.html"))
-print(albums_and_songs("https://www.azlyrics.com/a/a1xj1.html"))
 
 
 def lyrics(song_link: str) -> str:
@@ -93,18 +89,23 @@ def lyrics(song_link: str) -> str:
     return lyrics_div.text.strip()
 
 
-# def text_without_punctuation_marks(text: str) -> str:
-#     for punctuation_mark in '!"+,-.:?„':
-#         text = text.replace(punctuation_mark, "")
-#     return text
+def songs_from_album(artist_link: str, title: str) -> [Song]:
+    for album in albums_and_songs_by_artist(artist_link):
+        if album.title == title:
+            return album.songs_links
+    return []
 
 
 def text_without_numbering(text: str) -> str:
     return text.strip(string.digits + '. ')
 
 
-def _song_lyrics_name(name: str):
+def _song_lyrics_name(name: str) -> str:
     return name.split(" - ")[0].strip('"')
+
+
+def _album_title(name: str) -> str:
+    return name.split(" - ")[1].strip('"')
 
 
 def search(term: str) -> Search:
@@ -116,24 +117,23 @@ def search(term: str) -> Search:
 
     for panel in panels:
         for a in panel.find_all("a", class_=None):
-            name = text_without_numbering(a.text)
+            text = text_without_numbering(a.text)
+            link = a["href"]
             if "Song results" in panel.text:
-                name = _song_lyrics_name(name)
                 songs_results.append(
-                    Song(name, a["href"])
+                    Song(_song_lyrics_name(text), link)
                 )
             if "Artist results" in panel.text:
                 artists_results.append(
-                    Artist(name, a["href"])
+                    Artist(text, link)
                 )
             if "Album results" in panel.text:
                 albums_results.append(
-                    Album(name, a["href"])
-                ) # TODO: songs links not a link
+                    Album(_album_title(text), songs_from_album(link, text))
+                )
             if "Lyrics results" in panel.text:
-                name = _song_lyrics_name(name)
                 lyrics_results.append(
-                    Song(name, a["href"])
+                    Song(_song_lyrics_name(text), link)
                 )
 
     return Search(
@@ -144,19 +144,16 @@ def search(term: str) -> Search:
     )
 
 
-def find_song_by_lyrics(lyrics_fragment):
+def find_song_by_lyrics(lyrics_fragment) -> Song:
     results = search(lyrics_fragment).lyrics_results
     if results:
         return results[0]
-    return None
 
 
-def find_song_by_title(song_title):
+def find_song_by_title(song_title) -> Song:
     results = search(song_title).songs_results
     if results:
         return results[0]
-    return None
 
-# print(find_song_by_lyrics("with the wolves tonight"))
-# print(find_song_by_title("with the wolves"))
-# print(artists_links_by_letter("a"))
+
+print(search("Army").albums_results)
