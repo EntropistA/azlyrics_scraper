@@ -1,11 +1,9 @@
 import string
 from collections import namedtuple
 
-from bs4 import BeautifulSoup, Comment
+from bs4 import BeautifulSoup
 import requests
 
-# TODO: mention
-# https://github.com/adhorrig/azlyrics
 
 BASE_URL = "https://www.azlyrics.com"
 SEARCH_URL = "https://search.azlyrics.com"
@@ -17,7 +15,7 @@ def get_soup(url: str) -> BeautifulSoup:
 
 
 Artist = namedtuple("Artist", "name link")
-Album = namedtuple("Album", "title songs_links")
+Album = namedtuple("Album", "title album_link songs_links")
 Song = namedtuple("Song", "title link")
 Search = namedtuple("Search", "songs_results artist_results albums_results lyrics_results")
 
@@ -61,7 +59,7 @@ def albums_and_songs_by_artist(artist_link: str) -> list[Album]:
         if "album" in class_:
             if current_album_title:
                 albums.append(
-                    Album(current_album_title, current_songs)
+                    Album(current_album_title, artist_link, current_songs)
                 )
                 current_songs = []
             current_album_title = div.find("b").text.strip('"')
@@ -71,12 +69,13 @@ def albums_and_songs_by_artist(artist_link: str) -> list[Album]:
             if not a:
                 continue
 
+            song_link = f"{BASE_URL}/{a['href']}"
             current_songs.append(
-                Song(a.text, f"{BASE_URL}/{a['href']}")
+                Song(a.text, song_link)
             )
 
     albums.append(
-        Album(current_album_title, current_songs)
+        Album(current_album_title, artist_link, current_songs)
     )
     return albums
 
@@ -128,8 +127,9 @@ def search(term: str) -> Search:
                     Artist(text, link)
                 )
             if "Album results" in panel.text:
+                text = _album_title(text)
                 albums_results.append(
-                    Album(_album_title(text), songs_from_album(link, text))
+                    Album(text, link, songs_from_album(link, text))
                 )
             if "Lyrics results" in panel.text:
                 lyrics_results.append(
@@ -156,4 +156,8 @@ def find_song_by_title(song_title) -> Song:
         return results[0]
 
 
-print(search("Army").albums_results)
+def find_album_by_title(album_title) -> Song:
+    results = search(album_title).albums_results
+    if results:
+        return results[0]
+
