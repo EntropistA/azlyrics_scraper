@@ -1,7 +1,6 @@
 import string
 from collections import namedtuple
 
-import bs4
 from bs4 import BeautifulSoup
 import requests
 
@@ -27,11 +26,11 @@ def artists_by_letter(letter: str) -> list:
     url = f"{BASE_URL}/{letter.lower()}.html"
     soup = get_soup(url)
     names_and_links = []
-    for div in soup.find_all("div", {"class": "container main-page"}):
+    for div in soup.find_all("div", class_="container main-page"):
         links = div.findAll("a")
         for a in links:
             names_and_links.append(
-                Artist(a.text.strip(), a["href"])
+                Artist(a.text.strip(), f'{BASE_URL}/{a["href"]}')
             )
     return names_and_links
 
@@ -135,4 +134,20 @@ def search(term: str) -> Search:
 
 
 
-print(search("Jarmark"))
+def find_song_by_lyrics(lyrics_fragment):
+    results = search(lyrics_fragment).lyrics_results
+    if results:
+        return results[0]
+    return None
+
+
+def find_song_by_title(song_title):
+    results = search(song_title).songs_results
+    if results:
+        return results[0]
+    return None
+
+print(find_song_by_lyrics("with the wolves tonight"))
+print(find_song_by_title("with the wolves"))
+
+print(artists_links_by_letter("a"))
