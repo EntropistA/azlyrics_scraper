@@ -1,7 +1,7 @@
 import string
 from collections import namedtuple
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 import requests
 
 # TODO: mention
@@ -17,7 +17,7 @@ def get_soup(url: str) -> BeautifulSoup:
 
 
 Artist = namedtuple("Artist", "name link")
-Album = namedtuple("Album", "name songs")
+Album = namedtuple("Album", "name songs_links")
 Song = namedtuple("Song", "name link")
 Search = namedtuple("Search", "songs_results artist_results albums_results lyrics_results")
 
@@ -44,34 +44,45 @@ def artists_links_by_letter(letter: str) -> list:
 
 
 def albums_and_songs(artist_link: str) -> list:
-    url = f"{BASE_URL}/{artist_link}"
-    soup = get_soup(url)
+    soup = get_soup(artist_link)
 
-    albums_names_and_songs = []
+    albums = []
     current_album_name = ""
     current_songs = []
 
     albums_div = soup.find("div", id="listAlbum")
+    albums_div = albums_div if albums_div else soup
+
     for div in albums_div.find_all("div"):
         class_ = div.get("class")
         if not class_:
             continue
+
         if "album" in class_:
             if current_album_name:
-                albums_names_and_songs.append(
+                albums.append(
                     Album(current_album_name, current_songs)
                 )
                 current_songs = []
             current_album_name = div.find("b").text.strip('"')
+
         elif "listalbum-item" in class_:
             a = div.find("a")
+            if not a:
+                continue
+
             current_songs.append(
-                Song(a.text, a["href"])
+                Song(a.text, f"{BASE_URL}/{a['href']}")
             )
-    albums_names_and_songs.append(
+
+    albums.append(
         Album(current_album_name, current_songs)
     )
-    return albums_names_and_songs
+    return albums
+
+
+print(albums_and_songs("https://www.azlyrics.com/e/emilyking.html"))
+print(albums_and_songs("https://www.azlyrics.com/a/a1xj1.html"))
 
 
 def lyrics(song_link: str) -> str:
@@ -118,7 +129,7 @@ def search(term: str) -> Search:
             if "Album results" in panel.text:
                 albums_results.append(
                     Album(name, a["href"])
-                )
+                ) # TODO: songs links not a link
             if "Lyrics results" in panel.text:
                 name = _song_lyrics_name(name)
                 lyrics_results.append(
@@ -131,7 +142,6 @@ def search(term: str) -> Search:
         albums_results,
         lyrics_results,
     )
-
 
 
 def find_song_by_lyrics(lyrics_fragment):
@@ -147,7 +157,6 @@ def find_song_by_title(song_title):
         return results[0]
     return None
 
-print(find_song_by_lyrics("with the wolves tonight"))
-print(find_song_by_title("with the wolves"))
-
-print(artists_links_by_letter("a"))
+# print(find_song_by_lyrics("with the wolves tonight"))
+# print(find_song_by_title("with the wolves"))
+# print(artists_links_by_letter("a"))
