@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "azlyrics-scraper"
+version = "1.0.1"
+description = "Search for artists, albums, songs, lyrics on AZLyrics"
+authors = ["Adam <adam.wilcz7@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+requests = "^2.27.1"
+bs4 = "^0.0.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

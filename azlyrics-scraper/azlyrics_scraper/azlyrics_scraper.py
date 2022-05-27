@@ -166,7 +166,6 @@ def find_song_by_lyrics(lyrics_fragment) -> Song:
     if results:
         return results[0]
 
-
 if __name__ == "__main__":
     while True:
         phrase = input("Type phrase to test: ")
