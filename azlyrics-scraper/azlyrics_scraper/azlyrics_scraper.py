@@ -98,7 +98,7 @@ def lyrics(song_link: str) -> str:
 def songs_from_album(artist_link: str, title: str) -> [Song]:
     for album in albums_by_artist(artist_link):
         if album.title == title:
-            return album.songs_links
+            return album.songs
     return []
 
 
