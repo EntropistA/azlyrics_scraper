@@ -8,21 +8,19 @@ BASE_URL = "https://www.azlyrics.com"
 SEARCH_URL = "https://search.azlyrics.com"
 
 Artist = namedtuple("Artist", "name link")
-Album = namedtuple("Album", "title album_link songs_links")
+Album = namedtuple("Album", "title album_link songs")
 Song = namedtuple("Song", "title link")
 Search = namedtuple("Search", "songs_results artist_results albums_results lyrics_results")
 
 _proxies = None
+_verify = True
 
-def set_proxies(proxies: dict) -> None:
-    global _proxies
-
-    _proxies = proxies
 
 def _get_soup(url: str) -> BeautifulSoup:
     global _proxies
+    global _verify
 
-    page = requests.get(url, proxies=_proxies).content
+    page = requests.get(url, proxies=_proxies, verify=_verify).content
     return BeautifulSoup(page, features="html.parser")
 
 
