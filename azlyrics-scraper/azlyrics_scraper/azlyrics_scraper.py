@@ -7,21 +7,24 @@ import requests
 BASE_URL = "https://www.azlyrics.com"
 SEARCH_URL = "https://search.azlyrics.com"
 
-
-def get_soup(url: str) -> BeautifulSoup:
-    page = requests.get(url).content
-    return BeautifulSoup(page, features="html.parser")
-
-
 Artist = namedtuple("Artist", "name link")
 Album = namedtuple("Album", "title album_link songs_links")
 Song = namedtuple("Song", "title link")
 Search = namedtuple("Search", "songs_results artist_results albums_results lyrics_results")
 
 
+def _get_soup(url: str) -> BeautifulSoup:
+    page = requests.get(url).content
+    return BeautifulSoup(page, features="html.parser")
+
+
 def artists_by_letter(letter: str) -> list[Artist]:
+    letter = letter.lower()
+    if len(letter) != 1 or letter not in string.ascii_lowercase:
+        raise ValueError(f'"{letter}" is not a single ASCII letter')
+
     url = f"{BASE_URL}/{letter.lower()}.html"
-    soup = get_soup(url)
+    soup = _get_soup(url)
     names_and_links = []
     for div in soup.find_all("div", class_="container main-page"):
         links = div.findAll("a")
@@ -40,8 +43,8 @@ def artists_links_by_letter(letter: str) -> list[str]:
     return [artist.link for artist in artists_by_letter(letter)]
 
 
-def albums_and_songs_by_artist(artist_link: str) -> list[Album]:
-    soup = get_soup(artist_link)
+def albums_by_artist(artist_link: str) -> list[Album]:
+    soup = _get_soup(artist_link)
 
     albums = []
     current_album_title = ""
@@ -80,15 +83,14 @@ def albums_and_songs_by_artist(artist_link: str) -> list[Album]:
 
 
 def lyrics(song_link: str) -> str:
-    url = f"{BASE_URL}/{song_link}"
-    soup = get_soup(url)
+    soup = _get_soup(song_link)
 
     lyrics_div = soup.find("div", id=None, class_=None)
     return lyrics_div.text.strip()
 
 
 def songs_from_album(artist_link: str, title: str) -> [Song]:
-    for album in albums_and_songs_by_artist(artist_link):
+    for album in albums_by_artist(artist_link):
         if album.title == title:
             return album.songs_links
     return []
@@ -108,7 +110,7 @@ def _album_title(name: str) -> str:
 
 def search(term: str) -> Search:
     url = f"{SEARCH_URL}/search.php?q={term}"
-    soup = get_soup(url)
+    soup = _get_soup(url)
 
     panels = soup.find_all("div", class_="panel")
     songs_results, artists_results, albums_results, lyrics_results = [], [], [], []
@@ -143,34 +145,58 @@ def search(term: str) -> Search:
     )
 
 
+def find_artist_by_name(artist_name) -> Artist:
+    results = search(artist_name).artist_results
+    if results:
+        return results[0]
+
+
+def find_album_by_title(album_title) -> Album:
+    results = search(album_title).albums_results
+    if results:
+        return results[0]
+
+
 def find_song_by_title(song_title) -> Song:
     results = search(song_title).songs_results
     if results:
         return results[0]
 
 
-def find_artist_by_name(artist_name) -> Song:
-    results = search(artist_name).artist_results
-    if results:
-        return results[0]
-
-
-def find_album_by_title(album_title) -> Song:
-    results = search(album_title).albums_results
-    if results:
-        return results[0]
-
-
-def find_song_by_lyrics(lyrics_fragment) -> Song:
+def find_song_by_lyrics_fragment(lyrics_fragment) -> Song:
     results = search(lyrics_fragment).lyrics_results
     if results:
         return results[0]
 
-if __name__ == "__main__":
-    while True:
-        phrase = input("Type phrase to test: ")
 
-        print(find_song_by_title(phrase))
-        print(find_artist_by_name(phrase))
-        print(find_album_by_title(phrase))
-        print(find_song_by_lyrics(phrase))
+def find_lyrics_by_song_title(song_title: str) -> str:
+    return lyrics(find_song_by_title(song_title).link)
+
+
+def find_full_lyrics_by_lyrics_fragment(lyrics_fragment: str) -> str:
+    return lyrics(find_song_by_lyrics_fragment(lyrics_fragment).link)
+
+
+if __name__ == "__main__":
+    # print(artists_by_letter(1))
+    # print(artists_by_letter("ż"))
+
+    # print(artists_names_by_letter("a"))
+    # print(artists_links_by_letter("a"))
+
+    # print(find_artist_by_name("Aurora"))
+    # print(find_album_by_title("All my demons greeting me as a friend"))
+    # print(find_song_by_title("runaway"))
+
+    # print(find_song_by_lyrics_fragment("I was running far away"))
+    # print(find_lyrics_by_song_title("runaway"))
+    # print(find_song_by_title("runaway"))
+    # print(lyrics('https://www.azlyrics.com/lyrics/aurora/runaway.html'))
+    # print(find_full_lyrics_by_lyrics_fragment("wypili moją krew na hejnał"))
+
+    # while True:
+    #     phrase = input("Type phrase to test: ")
+    #     print(find_song_by_title(phrase))
+    #     print(find_artist_by_name(phrase))
+    #     print(find_album_by_title(phrase))
+    #     print(find_song_by_lyrics_fragment(phrase))
