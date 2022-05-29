@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "azlyrics-scraper"
-version = "1.0.1"
+version = "1.0.2"
 description = "Search for artists, albums, songs, lyrics on AZLyrics"
 authors = ["Adam <adam.wilcz7@gmail.com>"]
 license = "MIT"
