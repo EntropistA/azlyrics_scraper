@@ -186,6 +186,7 @@ def find_full_lyrics_by_lyrics_fragment(lyrics_fragment: str) -> str:
 
 
 if __name__ == "__main__":
+    pass
     # print(_get_soup("http://google.com"))
     # print(artists_by_letter(1))
     # print(artists_by_letter("ż"))
